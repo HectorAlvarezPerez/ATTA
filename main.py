@@ -100,7 +100,7 @@ def main(args: argparse.Namespace) -> None:
 
     # Load label maps + model + processor
     id2label, label2id, num_labels = load_label_maps()
-    model, processor = load_model_and_processor(id2label, label2id, num_labels, device)
+    model, processor, evaluating_processor = load_model_and_processor(id2label, label2id, num_labels, device)
 
     # Setup optimizer and evaluation metric
     optimizer = torch.optim.Adam(model.parameters(), lr=args.lr)
@@ -138,7 +138,7 @@ def main(args: argparse.Namespace) -> None:
         val_metrics = evaluate_model(
             model=model,
             val_filenames=val_ids,
-            processor=processor,
+            processor=evaluating_processor,
             metric=metric,
             device=device,
             num_labels=num_labels,

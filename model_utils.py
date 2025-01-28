@@ -35,7 +35,7 @@ def load_model_and_processor(
     label2id: dict[str, int],
     num_labels: int,
     device: torch.device
-) -> tuple[SegformerForSemanticSegmentation, SegformerImageProcessor]:
+) -> tuple[SegformerForSemanticSegmentation, SegformerImageProcessor, SegformerImageProcessor]:
     """
     Load the segmentation model (SegFormer) and image processor.
     """
@@ -49,7 +49,8 @@ def load_model_and_processor(
     
     # Resize input images depending on the size of the gpu's
     processor = SegformerImageProcessor(do_resize=True, size={"width": 960, "height": 540})
-    return model, processor
+    evaluating_processor = SegformerImageProcessor(do_resize=False)
+    return model, processor, evaluating_processor
 
 
 def loss_function(
@@ -68,7 +69,8 @@ def loss_function(
     probs = nn.functional.softmax(logits, dim=1)
     entropy_loss = -torch.sum(probs * torch.log(probs + 1e-6), dim=1).mean()
     cross_entropy_loss = nn.CrossEntropyLoss(ignore_index=19)(logits, inputs["labels"])
-    return probs, cross_entropy_loss + lambda_entropy * entropy_loss
+    loss = cross_entropy_loss + lambda_entropy * entropy_loss
+    return probs, loss
 
 
 def calculate_bvs_sb_score(

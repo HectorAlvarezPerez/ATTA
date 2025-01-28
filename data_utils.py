@@ -102,6 +102,7 @@ def evaluate_model(
             outputs = model(**inputs)
 
             logits = outputs.logits
+
             # Interpolate to match label shape
             logits = torch.nn.functional.interpolate(
                 logits,

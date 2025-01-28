@@ -98,7 +98,7 @@ def train_atta(
             )
         elif tta_type in ["CTTA", "FTTA"]:
             # BvsSB requires region NPZ + scoring
-            if args.sort_by == "BvsSB" or args.sort_by == "Entropy":
+            if args.sort_by in ["BvsSB", "Entropy"]:
                 region_ann_npz = os.path.join(
                     region_annotation_path,
                     f"{fname}{region_annotation_extension}"
