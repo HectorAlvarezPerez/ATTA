@@ -15,12 +15,12 @@ def parse_args() -> argparse.Namespace:
     Parse command-line arguments for ATTA training.
     """
     parser = argparse.ArgumentParser(
-        description="Train a model using ATTA (Adversarial/Test-Time Adaptation)."
+        description="Train a model using ATTA (Active Test-Time Adaptation)."
     )
 
     # Required arguments
-    parser.add_argument("--gpu", type=int, default=0,
-                        help="GPU to use for training (default=0).")
+    parser.add_argument("--gpu", type=int,
+                        help="GPU to use for training.")
     parser.add_argument(
         "--tta_type",
         type=str,
@@ -97,6 +97,7 @@ def main(args: argparse.Namespace) -> None:
     Main function to train the segmentation model using ATTA.
     """
     device = torch.device(f"cuda:{args.gpu}" if torch.cuda.is_available() else "cpu")
+    print(f"Device: {device}")
 
     # Load label maps + model + processor
     id2label, label2id, num_labels = load_label_maps()
@@ -112,7 +113,6 @@ def main(args: argparse.Namespace) -> None:
     # Train for 'epochs'
     for epoch in range(args.epochs):
         print(f"\n=== Epoch {epoch + 1}/{args.epochs} ===")
-        from train import train_atta  # to avoid circular import
         train_atta(
             train_filenames=train_ids,
             lambda_entropy=args.lambda_entropy,
@@ -134,7 +134,6 @@ def main(args: argparse.Namespace) -> None:
         )
 
         # Validation
-        from data_utils import evaluate_model
         val_metrics = evaluate_model(
             model=model,
             val_filenames=val_ids,

@@ -40,7 +40,8 @@ def load_model_and_processor(
     Load the segmentation model (SegFormer) and image processor.
     """
     model = SegformerForSemanticSegmentation.from_pretrained(
-        "hector-alvarez/segformerb5-cityscapes",
+        "./models/Segformer2cs/segformerb5-cs_hf/checkpoint-8500",
+        # "hector-alvarez/segformerb5-cityscapes",
         num_labels=num_labels,
         id2label=id2label,
         label2id=label2id
