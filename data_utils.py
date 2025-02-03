@@ -120,6 +120,7 @@ def evaluate_model(
     all_preds_np = np.concatenate(all_preds, axis=0)
     all_labels_np = np.concatenate(all_labels, axis=0)
 
+
     results = metric.compute(
         predictions=all_preds_np,
         references=all_labels_np,

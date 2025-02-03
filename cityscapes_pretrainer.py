@@ -170,7 +170,7 @@ def compute_metrics(
             predictions=preds,
             references=labels,
             num_labels=num_labels,
-            ignore_index=19,  # 'ignore'
+            ignore_index=19, 
             reduce_labels=processor.do_reduce_labels
         )
 

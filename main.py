@@ -78,7 +78,7 @@ def parse_args() -> argparse.Namespace:
                         help="Minimum region area for annotation (default=1000).")
     parser.add_argument("--budget", type=int, default=16,
                         help="Number of region annotations per image (default=16).")
-    parser.add_argument("--sort-by", type=str, default="random",
+    parser.add_argument("--sort-by", type=str,
                         help="Sorting criterion for region selection (e.g., BvsSB, random).")
     parser.add_argument("--seed", type=int, default=123,
                         help="Random seed (default=123).")
@@ -137,7 +137,7 @@ def main(args: argparse.Namespace) -> None:
         val_metrics = evaluate_model(
             model=model,
             val_filenames=val_ids,
-            processor=evaluating_processor,
+            processor=processor,
             metric=metric,
             device=device,
             num_labels=num_labels,
