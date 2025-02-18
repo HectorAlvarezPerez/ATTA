@@ -86,7 +86,7 @@ def evaluate_model(
 
     model.eval()
     all_preds, all_labels = [], []
-
+    
     with torch.no_grad():
         for fname in val_filenames:
             img_path = os.path.join(base_path_images, f"{fname}{images_extension}")
@@ -94,10 +94,12 @@ def evaluate_model(
 
             img = Image.open(img_path)
             ann = Image.open(ann_path)
+            ann = np.array(ann)
+            ann[ann == 255] = 19  # 255 es el valor de ignore_index en PyTorch
 
-            # Clip annotation values to [0, num_labels-1]
-            label = Image.fromarray(np.minimum(np.array(ann), num_labels - 1), mode='L')
 
+            label = Image.fromarray(np.minimum(ann, num_labels - 1), mode='L')
+            
             inputs = processor(images=img, segmentation_maps=label, return_tensors="pt").to(device)
             outputs = model(**inputs)
 

@@ -101,6 +101,8 @@ def read_gt(
         raise FileNotFoundError(f"Ground-truth file not found: {filename}")
 
     gt = cv2.imread(filename, cv2.IMREAD_GRAYSCALE)
+    if dataset_name == 'acdc_train_annotations':
+        gt[gt==255] = 19
     if dataset_name == 'mapillary_vistas_aspect_1.33_train':
         gt = cv2.resize(gt, (shape_gt[1], shape_gt[0]), interpolation=cv2.INTER_NEAREST)
 
@@ -440,7 +442,7 @@ def parse_args() -> argparse.Namespace:
         args.ignore_label_groundtruth = 19
         args.shape_gt = (1216, 1632)
     elif args.dataset == 'acdc_train_annotations':
-        args.ignore_label_groundtruth = 255
+        args.ignore_label_groundtruth = 19
         args.shape_gt = (1080, 1920)  # Original shapes
     # else is covered by parser 'choices' => no need for an else.
 

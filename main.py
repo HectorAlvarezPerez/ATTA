@@ -97,11 +97,10 @@ def main(args: argparse.Namespace) -> None:
     Main function to train the segmentation model using ATTA.
     """
     device = torch.device(f"cuda:{args.gpu}" if torch.cuda.is_available() else "cpu")
-    print(f"Device: {device}")
-
     # Load label maps + model + processor
     id2label, label2id, num_labels = load_label_maps()
     model, processor, evaluating_processor = load_model_and_processor(id2label, label2id, num_labels, device)
+
 
     # Setup optimizer and evaluation metric
     optimizer = torch.optim.Adam(model.parameters(), lr=args.lr)
@@ -147,6 +146,7 @@ def main(args: argparse.Namespace) -> None:
             annotations_extension=args.annotations_extension
         )
         print(f"Validation after epoch {epoch + 1}: {val_metrics}")
+        
 
         # Possibly remove annotation outputs
         if args.delete_output_annotations and args.path_output:

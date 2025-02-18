@@ -49,6 +49,12 @@ def evaluate_first_image(
             )
 
 
+from tqdm import tqdm
+import torch
+import os
+import numpy as np
+from PIL import Image
+
 def train_atta(
     train_filenames: list[str],
     lambda_entropy: float,
@@ -69,16 +75,16 @@ def train_atta(
     args
 ) -> None:
     """
-    Train the model with ATTA (CTTA/FTTA).
+    Train the model with ATTA (CTTA/FTTA) using a tqdm progress bar.
     """
     if len(train_filenames) == 0:
         raise ValueError("No training filenames provided.")
 
     all_preds, all_labels = [], []
+    progress_bar = tqdm(train_filenames, desc="Training images", unit="img")
 
-    for i, fname in enumerate(train_filenames):
-        print(f"Training on image {i+1}/{len(train_filenames)}")
-
+    # Wrap your list of filenames with tqdm
+    for i, fname in enumerate(progress_bar):
         img_path = os.path.join(base_path_images, f"{fname}{images_extension}")
         ann_path = os.path.join(base_path_annotations, f"{fname}{annotations_extension}")
 
@@ -90,10 +96,13 @@ def train_atta(
         img = Image.open(img_path)
         ann = Image.open(ann_path)
 
+        ann = np.array(ann)
+        ann[ann == 255] = 19  # Convert ignored label to 19
+
         # Decide how to create active_label
         if tta_type in ["CTTA_upperbound", "FTTA_upperbound"]:
             active_label = Image.fromarray(
-                np.minimum(np.array(ann), num_labels - 1),
+                np.minimum(ann, num_labels - 1),
                 mode='L'
             )
         elif tta_type in ["CTTA", "FTTA"]:
@@ -140,6 +149,7 @@ def train_atta(
             mode="bilinear",
             align_corners=False
         )
+
         probs, loss = loss_function(logits, lambda_entropy, inputs)
 
         # If BvsSB, re-compute region scores after update
@@ -169,6 +179,8 @@ def train_atta(
         all_preds.append(logits_np)
         all_labels.append(labels_np)
 
+        progress_bar.set_postfix(loss=loss.item())
+
         # Evaluate every N steps
         if (i + 1) % evaluate_every == 0:
             print("\nEvaluating partial training predictions...")
@@ -186,6 +198,5 @@ def train_atta(
             all_preds.clear()
             all_labels.clear()
 
-            print("Train metrics:", train_metrics, "\n")
+            tqdm.write(f"Train metrics: {train_metrics}")
 
-        print(f"Loss: {loss.item()}")

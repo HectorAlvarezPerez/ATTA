@@ -21,8 +21,8 @@ def load_label_maps() -> tuple[dict[int, str], dict[str, int], int]:
     id2label = {int(k): v for k, v in id2label_raw.items()}
     label2id = {v: k for k, v in id2label.items()}
 
-    id2label[19] = "ignore"
-    label2id["ignore"] = 19
+    id2label[19] = "ignore" 
+    label2id["ignore"] = 19 
 
     num_labels = len(id2label)
     if num_labels != 20:
@@ -40,13 +40,18 @@ def load_model_and_processor(
     Load the segmentation model (SegFormer) and image processor.
     """
     model = SegformerForSemanticSegmentation.from_pretrained(
-        "./models/Segformer2cs/segformerb5-cs_hf/checkpoint-8500",
+        "nvidia/segformer-b5-finetuned-cityscapes-1024-1024",
+        # "./models/Segformer2cs/segformerb5-cs_hf/checkpoint-8500",
         # "hector-alvarez/segformerb5-cityscapes",
-        num_labels=num_labels,
-        id2label=id2label,
-        label2id=label2id
+        # num_labels=num_labels,
+        # id2label=id2label,
+        # label2id=label2id
     )
     model.to(device)
+
+    model.config.id2label = id2label
+    model.config.label2id = label2id
+    model.config.semantic_loss_ignore_index = 19
     
     # Resize input images depending on the size of the gpu's
     processor = SegformerImageProcessor(do_resize=True, size={"width": 960, "height": 540})
@@ -68,8 +73,8 @@ def loss_function(
         raise ValueError("Inputs dict must contain 'labels'.")
 
     probs = nn.functional.softmax(logits, dim=1)
-    entropy_loss = -torch.sum(probs * torch.log(probs + 1e-6), dim=1).mean()
-    cross_entropy_loss = nn.CrossEntropyLoss(ignore_index=19)(logits, inputs["labels"])
+    entropy_loss = -torch.sum(probs * torch.log(probs + 1e-6), dim=1).mean() # could use entropy function from scipy instead
+    cross_entropy_loss =  nn.CrossEntropyLoss(ignore_index=19)(logits, inputs["labels"])
     loss = cross_entropy_loss + lambda_entropy * entropy_loss
     return probs, loss
 
@@ -101,7 +106,9 @@ def calculate_bvs_sb_score(
         ).to(probs.device)
 
         region_probs = probs * resized_tensor
-        probs_per_class = torch.mean(region_probs, dim=(2, 3))
+        region_sum = torch.sum(region_probs, dim=(2,3))
+        mask_sum = torch.sum(resized_tensor, dim=(2,3))
+        probs_per_class = region_sum / (mask_sum + 1e-6)
         top_values = torch.topk(probs_per_class, 2, dim=1).values
         bvs_sb = top_values[:, 0] - top_values[:, 1]
         regions_bvs_sb_score.append(bvs_sb)
@@ -144,6 +151,7 @@ def calculate_entropy(
         probs_per_class = torch.mean(region_probs, dim=(2, 3))
         entropies = entropy(probs_per_class.cpu().detach().numpy().T)
         regions_entropy.append(entropies)
+        label2id=label2id
 
     # Convert to list and save as JSON
     scores_list = [tensor.tolist() for tensor in regions_entropy]
